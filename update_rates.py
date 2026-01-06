@@ -3,103 +3,93 @@ import pandas as pd
 import json
 from datetime import datetime, timedelta
 import os
-import sys
 
-# 設定日期範圍 (設為 5 年)
+# 設定：今天的日期 (由系統自動抓取)
 end_date = datetime.now()
-start_date = end_date - timedelta(days=1825)
 
-# 定義需要的基礎貨幣對
-tickers_map = {
-    "USDTWD": "TWD=X",
-    "USDLKR": "LKR=X", 
-    "USDCNY": "CNY=X",
-    "USDJPY": "JPY=X"
+# --- 修改重點：這裡改成 3650 天 (約 10 年) ---
+start_date = end_date - timedelta(days=3650) 
+# ----------------------------------------
+
+# 定義需要的基礎貨幣對 (Yahoo Finance 代號)
+tickers = {
+    "USDTWD": "TWD=X",  # 美金 -> 台幣
+    "USDLKR": "LKR=X",  # 美金 -> 斯里蘭卡盧比
+    "USDCNY": "CNY=X",  # 美金 -> 人民幣
+    "USDJPY": "JPY=X"   # 美金 -> 日幣
 }
 
 def get_data():
-    print(f"啟動抓取程序... ({start_date.date()} ~ {end_date.date()})")
+    print(f"正在抓取數據... ({start_date.date()} ~ {end_date.date()})")
+    data_store = {}
     
-    # 用來暫存成功抓到的數據
-    collected_data = {}
-    
-    # 1. 逐個抓取 (避免一顆老鼠屎壞了一鍋粥)
-    for key, symbol in tickers_map.items():
+    # 1. 下載基礎數據
+    raw_data = {}
+    for key, symbol in tickers.items():
         try:
-            print(f"正在抓取 {symbol} ...")
+            # 下載歷史數據
             ticker = yf.Ticker(symbol)
-            # 嘗試抓取數據
+            # auto_adjust=False 確保獲取原始收盤價
             df = ticker.history(start=start_date, end=end_date, auto_adjust=False)
-            
-            if df.empty:
-                print(f"⚠️ 警告: {symbol} 抓不到數據，跳過此貨幣。")
-                continue
-                
-            # 整理數據
             df.reset_index(inplace=True)
+            # 統一日期格式
             df['Date'] = df['Date'].dt.strftime('%Y-%m-%d')
-            collected_data[key] = df[['Date', 'Close']].set_index('Date')['Close']
-            print(f"✅ {symbol} 抓取成功，共 {len(df)} 筆。")
-            
+            # 只留日期和收盤價，並重新命名
+            raw_data[key] = df[['Date', 'Close']].set_index('Date')
         except Exception as e:
-            print(f"❌ 錯誤: 抓取 {symbol} 時發生異常: {e}")
-            continue
+            print(f"Error fetching {key}: {e}")
+            return None
 
-    # 如果連最重要的台幣都沒抓到，那就真的失敗了
-    if "USDTWD" not in collected_data:
-        print("❌ 嚴重錯誤: 無法獲取 USDTWD 數據，停止更新。")
-        sys.exit(1) # 強制報錯，讓 GitHub 顯示紅色叉叉
-
-    # 2. 數據對齊 (只保留大家都有的日期)
-    # 以台幣的日期為基準
-    valid_dates = collected_data["USDTWD"].index
-    for key in collected_data:
-        valid_dates = valid_dates.intersection(collected_data[key].index)
+    # 確保所有數據的日期對齊 (取交集)
+    # 注意：如果某個貨幣沒有 10 年歷史，所有數據會自動縮短到大家都有的時間點
+    common_index = raw_data["USDTWD"].index
+    for key in raw_data:
+        common_index = common_index.intersection(raw_data[key].index)
     
-    print(f"數據對齊後，剩餘有效天數: {len(valid_dates)}")
+    # 對齊數據
+    aligned_data = {k: v.loc[common_index] for k, v in raw_data.items()}
+    
+    # 2. 計算使用者指定的交叉匯率
+    # 將 DataFrame 轉為數值便於計算
+    usd_twd = aligned_data["USDTWD"]['Close']
+    usd_lkr = aligned_data["USDLKR"]['Close']
+    usd_cny = aligned_data["USDCNY"]['Close']
+    usd_jpy = aligned_data["USDJPY"]['Close']
 
-    # 3. 計算交叉匯率 (有防呆機制)
-    pairs_data = []
-
-    def safe_get_series(key):
-        return collected_data.get(key, pd.Series(dtype=float)).loc[valid_dates]
-
-    # 準備基礎數據
-    usd_twd = safe_get_series("USDTWD")
-    usd_lkr = safe_get_series("USDLKR")
-    usd_cny = safe_get_series("USDCNY")
-    usd_jpy = safe_get_series("USDJPY")
-
-    # 定義輸出函數
-    def format_pair(series, name):
-        if series.empty: return None
-        history = [{"date": d, "value": round(v, 4)} for d, v in series.items()]
+    # 定義輸出格式的函數
+    def format_pair_history(series, name):
+        history = []
+        for date, price in series.items():
+            history.append({"date": date, "value": round(float(price), 4)})
         return {
             "name": name,
-            "current_rate": round(series.iloc[-1], 4),
+            "current_rate": round(float(series.iloc[-1]), 4),
             "history": history
         }
 
-    # --- 組裝數據 ---
-    # 只要有數據就加入，沒有就跳過，不會報錯
-    
-    # 美金系列
-    if not usd_twd.empty: pairs_data.append(format_pair(usd_twd, "美金 / 台幣 (USD/TWD)"))
-    if not usd_lkr.empty: pairs_data.append(format_pair(usd_lkr, "美金 / 斯里蘭卡盧比 (USD/LKR)"))
-    
-    # 人民幣系列 (需要同時有 CNY 和 TWD)
-    if not usd_cny.empty and not usd_twd.empty:
-        pairs_data.append(format_pair(usd_cny, "美金 / 人民幣 (USD/CNY)"))
-        pairs_data.append(format_pair(usd_cny / usd_twd, "台幣 / 人民幣 (TWD/CNY)"))
-        pairs_data.append(format_pair(1 / usd_cny, "人民幣 / 美金 (CNY/USD)"))
-        pairs_data.append(format_pair(usd_twd / usd_cny, "人民幣 / 台幣 (CNY/TWD)"))
+    pairs_data = []
 
-    # 日幣系列 (需要同時有 JPY 和 TWD)
-    if not usd_jpy.empty and not usd_twd.empty:
-        pairs_data.append(format_pair(usd_jpy, "美金 / 日幣 (USD/JPY)"))
-        pairs_data.append(format_pair(usd_jpy / usd_twd, "台幣 / 日幣 (TWD/JPY)"))
+    # --- Group 1: 美金相關 ---
+    pairs_data.append(format_pair_history(usd_twd, "美金 / 台幣 (USD/TWD)"))
+    pairs_data.append(format_pair_history(usd_lkr, "美金 / 斯里蘭卡盧比 (USD/LKR)"))
+    
+    # --- Group 2: 美金/台幣 兌 人民幣 ---
+    pairs_data.append(format_pair_history(usd_cny, "美金 / 人民幣 (USD/CNY)"))
+    twd_to_cny = usd_cny / usd_twd
+    pairs_data.append(format_pair_history(twd_to_cny, "台幣 / 人民幣 (TWD/CNY)"))
 
-    # 4. 生成檔案
+    # --- Group 3: 人民幣 兌 美金/台幣 ---
+    cny_to_usd = 1 / usd_cny
+    pairs_data.append(format_pair_history(cny_to_usd, "人民幣 / 美金 (CNY/USD)"))
+    cny_to_twd = usd_twd / usd_cny
+    pairs_data.append(format_pair_history(cny_to_twd, "人民幣 / 台幣 (CNY/TWD)"))
+
+    # --- Group 4: 美金/台幣 兌 日幣 ---
+    pairs_data.append(format_pair_history(usd_jpy, "美金 / 日幣 (USD/JPY)"))
+    twd_to_jpy = usd_jpy / usd_twd
+    pairs_data.append(format_pair_history(twd_to_jpy, "台幣 / 日幣 (TWD/JPY)"))
+
+    # 3. 生成最終 JSON
     output = {
         "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "data": pairs_data
@@ -109,10 +99,7 @@ def get_data():
 
 if __name__ == "__main__":
     data = get_data()
-    if data and len(data["data"]) > 0:
+    if data:
         with open("rates_data.json", "w", encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
-        print("🎉 成功生成 rates_data.json")
-    else:
-        print("❌ 生成失敗: 沒有有效數據")
-        sys.exit(1)
+        print("成功生成 rates_data.json")
