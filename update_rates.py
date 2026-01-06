@@ -6,7 +6,7 @@ import os
 
 # 設定：今天的日期 (由系統自動抓取，確保是 2026-01-06 或當下日期)
 end_date = datetime.now()
-start_date = end_date - timedelta(days=365) # 一年歷史
+start_date = end_date - timedelta(days=3650) # 十年歷史
 
 # 定義需要的基礎貨幣對 (Yahoo Finance 代號)
 # 邏輯：所有交叉匯率都可以透過 USD 推算
@@ -107,3 +107,4 @@ if __name__ == "__main__":
             json.dump(data, f, ensure_ascii=False, indent=2)
 
         print("成功生成 rates_data.json")
+
