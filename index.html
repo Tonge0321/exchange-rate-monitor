@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>即時匯率與歷史趨勢</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f9; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        h1 { text-align: center; color: #333; }
+        .update-time { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 30px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .card h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .current-rate { font-size: 2em; font-weight: bold; color: #2980b9; margin: 10px 0; }
+        canvas { max-width: 100%; height: 200px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>全球匯率監控儀表板</h1>
+        <div id="lastUpdated" class="update-time">載入中...</div>
+        <div id="chartsGrid" class="grid">
+            </div>
+    </div>
+
+    <script>
+        async function loadData() {
+            try {
+                // 讀取 Python 生成的 JSON 檔案
+                // 加上時間戳記避免瀏覽器快取舊資料
+                const response = await fetch('rates_data.json?t=' + new Date().getTime());
+                const jsonData = await response.json();
+                
+                document.getElementById('lastUpdated').textContent = `最後更新時間: ${jsonData.last_updated}`;
+                
+                const grid = document.getElementById('chartsGrid');
+                grid.innerHTML = ''; // 清空舊內容
+                
+                jsonData.data.forEach((pair, index) => {
+                    // 建立卡片元素
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    
+                    const title = document.createElement('h3');
+                    title.textContent = pair.name;
+                    
+                    const rate = document.createElement('div');
+                    rate.className = 'current-rate';
+                    rate.textContent = pair.current_rate;
+                    
+                    const canvasContainer = document.createElement('div');
+                    const canvas = document.createElement('canvas');
+                    canvas.id = `chart-${index}`;
+                    canvasContainer.appendChild(canvas);
+                    
+                    card.appendChild(title);
+                    card.appendChild(rate);
+                    card.appendChild(canvasContainer);
+                    grid.appendChild(card);
+                    
+                    // 準備圖表數據
+                    const labels = pair.history.map(h => h.date);
+                    const dataPoints = pair.history.map(h => h.value);
+                    
+                    // 繪圖
+                    new Chart(canvas, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: '近半年走勢',
+                                data: dataPoints,
+                                borderColor: '#3498db',
+                                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.1,
+                                pointRadius: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                x: { display: false }, 
+                                y: { beginAtZero: false }
+                            },
+                            interaction: {
+                                intersect: false,
+                                mode: 'index',
+                            }
+                        }
+                    });
+                });
+            } catch (e) {
+                console.error("Error loading data:", e);
+                document.getElementById('lastUpdated').textContent = "讀取數據失敗，請確認 rates_data.json 是否存在於同一個資料夾。";
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
