@@ -1,9 +1,9 @@
 {
-  "last_updated": "2026-06-10 02:58:17",
+  "last_updated": "2026-06-11 03:33:33",
   "data": [
     {
       "name": "美金 / 台幣 (USD/TWD)",
-      "current_rate": 31.582,
+      "current_rate": NaN,
       "history": [
         {
           "date": "2016-06-13",
@@ -10396,12 +10396,20 @@
         {
           "date": "2026-06-09",
           "value": 31.582
+        },
+        {
+          "date": "2026-06-10",
+          "value": 31.5409
+        },
+        {
+          "date": "2026-06-11",
+          "value": NaN
         }
       ]
     },
     {
       "name": "美金 / 斯里蘭卡盧比 (USD/LKR)",
-      "current_rate": 333.7943,
+      "current_rate": NaN,
       "history": [
         {
           "date": "2016-06-13",
@@ -20794,12 +20802,20 @@
         {
           "date": "2026-06-09",
           "value": 333.7943
+        },
+        {
+          "date": "2026-06-10",
+          "value": 334.3604
+        },
+        {
+          "date": "2026-06-11",
+          "value": NaN
         }
       ]
     },
     {
       "name": "美金 / 人民幣 (USD/CNY)",
-      "current_rate": 6.7655,
+      "current_rate": NaN,
       "history": [
         {
           "date": "2016-06-13",
@@ -31192,12 +31208,20 @@
         {
           "date": "2026-06-09",
           "value": 6.7655
+        },
+        {
+          "date": "2026-06-10",
+          "value": 6.7725
+        },
+        {
+          "date": "2026-06-11",
+          "value": NaN
         }
       ]
     },
     {
       "name": "台幣 / 人民幣 (TWD/CNY)",
-      "current_rate": 0.2142,
+      "current_rate": NaN,
       "history": [
         {
           "date": "2016-06-13",
@@ -41590,12 +41614,20 @@
         {
           "date": "2026-06-09",
           "value": 0.2142
+        },
+        {
+          "date": "2026-06-10",
+          "value": 0.2147
+        },
+        {
+          "date": "2026-06-11",
+          "value": NaN
         }
       ]
     },
     {
       "name": "人民幣 / 美金 (CNY/USD)",
-      "current_rate": 0.1478,
+      "current_rate": NaN,
       "history": [
         {
           "date": "2016-06-13",
@@ -51988,12 +52020,20 @@
         {
           "date": "2026-06-09",
           "value": 0.1478
+        },
+        {
+          "date": "2026-06-10",
+          "value": 0.1477
+        },
+        {
+          "date": "2026-06-11",
+          "value": NaN
         }
       ]
     },
     {
       "name": "人民幣 / 台幣 (CNY/TWD)",
-      "current_rate": 4.6681,
+      "current_rate": NaN,
       "history": [
         {
           "date": "2016-06-13",
@@ -62386,12 +62426,20 @@
         {
           "date": "2026-06-09",
           "value": 4.6681
+        },
+        {
+          "date": "2026-06-10",
+          "value": 4.6572
+        },
+        {
+          "date": "2026-06-11",
+          "value": NaN
         }
       ]
     },
     {
       "name": "美金 / 日幣 (USD/JPY)",
-      "current_rate": 160.174,
+      "current_rate": NaN,
       "history": [
         {
           "date": "2016-06-13",
@@ -72784,12 +72832,20 @@
         {
           "date": "2026-06-09",
           "value": 160.174
+        },
+        {
+          "date": "2026-06-10",
+          "value": 160.384
+        },
+        {
+          "date": "2026-06-11",
+          "value": NaN
         }
       ]
     },
     {
       "name": "台幣 / 日幣 (TWD/JPY)",
-      "current_rate": 5.0717,
+      "current_rate": NaN,
       "history": [
         {
           "date": "2016-06-13",
@@ -83182,6 +83238,14 @@
         {
           "date": "2026-06-09",
           "value": 5.0717
+        },
+        {
+          "date": "2026-06-10",
+          "value": 5.085
+        },
+        {
+          "date": "2026-06-11",
+          "value": NaN
         }
       ]
     }
